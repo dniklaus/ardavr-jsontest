@@ -44,36 +44,102 @@ aJsonObject *createMessageToSend()
   return msg;
 }
 
-/* Process message like: { "pwm": { "8": 0, "9": 128 } } */
-void processMessageReceived(aJsonObject *msg)
+/* Process message like: {"straight":{"distance": 10,"topspeed": 100},"turn":{"angle": 45},"emergencyStop":{"stop":false}}*/
+void processLinellaMessageReceived(aJsonObject *msg)
 {
-  aJsonObject *pwm = aJson.getObjectItem(msg, "pwm");
-  if (!pwm) {
-    Serial.println("no pwm data");
+  bool emergencyStopValue = false;
+  int topspeed = 0;
+  int distanceValue = 0;
+  int angleValue = 0;
+
+  //TODO Make the following more generic
+
+  aJsonObject *straight = aJson.getObjectItem(msg, "straight");
+  aJsonObject *turn = aJson.getObjectItem(msg, "turn");
+  aJsonObject *emergencyStop = aJson.getObjectItem(msg, "emergencyStop");
+  if (!straight || !turn || !emergencyStop)
+  {
+    Serial.println("no linella data");
     return;
   }
 
-  const static int pins[] = { 8, 9 };
-  const static int pins_n = 2;
-  for (int i = 0; i < pins_n; i++) {
-    char pinstr[3];
-    snprintf(pinstr, sizeof(pinstr), "%d", pins[i]);
+  aJsonObject *straightSpeed = aJson.getObjectItem(straight, "topspeed");
+  Serial.println(straightSpeed->name);
 
-    aJsonObject *pwmval = aJson.getObjectItem(pwm, pinstr);
-    if (!pwmval) continue; /* Value not provided, ok. */
-    if (pwmval->type != aJson_Int) {
-      Serial.print("invalid data type ");
-      Serial.print(pwmval->type, DEC);
-      Serial.print(" for pin ");
-      Serial.println(pins[i], DEC);
-      continue;
+  if (straightSpeed)
+  {
+    if (straightSpeed->type == aJson_Int)
+    {
+      topspeed = straightSpeed->valueint;
+      Serial.println("topspeed: ");
+      Serial.println(topspeed);
     }
+    else
+    {
+      Serial.println("invalid topspeed data type ");
+    }
+  }
+  else
+  {
+    Serial.println("invalid topspeed data");
+  }
 
-    Serial.print("setting pin ");
-    Serial.print(pins[i], DEC);
-    Serial.print(" to value ");
-    Serial.println(pwmval->valueint, DEC);
-    analogWrite(pins[i], pwmval->valueint);
+  aJsonObject *distance = aJson.getObjectItem(straight, "distance");
+  Serial.println(distance->name);
+
+  if (distance)
+  {
+    if (distance->type == aJson_Int)
+    {
+      distanceValue = distance->valueint;
+      Serial.println("distance: ");
+      Serial.println(distanceValue);
+    }
+    else
+    {
+      Serial.println("invalid distance data type ");
+    }
+  }
+  else
+  {
+    Serial.println("invalid distance data");
+  }
+
+  aJsonObject *angle = aJson.getObjectItem(turn, "angle");
+  Serial.println(angle->name);
+
+  if (angle)
+  {
+    if (angle->type == aJson_Int)
+    {
+      angleValue = angle->valueint;
+      Serial.println("angle: ");
+      Serial.println(angleValue);
+    }
+    else
+    {
+      Serial.println("invalid angle data type ");
+    }
+  }
+  else
+  {
+    Serial.println("invalid angle data");
+  }
+
+  //TODO Make the boolean working
+  aJsonObject *emergency = aJson.getObjectItem(turn, "stop");
+  Serial.println(emergency->name);
+  Serial.println(emergency->valuebool);
+
+  if (emergency->type == aJson_True)
+  {
+    emergencyStopValue = emergency->valuebool;
+    Serial.println("emergency: ");
+    Serial.println(emergencyStopValue);
+  }
+  else
+  {
+    Serial.println("invalid emergency data type ");
   }
 }
 
@@ -96,7 +162,7 @@ void loop()
   if (serial_stream.available()) {
     /* Something real on input, let's take a look. */
     aJsonObject *msg = aJson.parse(&serial_stream);
-    processMessageReceived(msg);
+    processLinellaMessageReceived(msg);
     aJson.deleteItem(msg);
   }
 }
