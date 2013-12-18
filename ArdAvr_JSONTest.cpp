@@ -45,7 +45,7 @@ aJsonObject *createMessageToSend()
 }
 
 /* Process message like: {"straight":{"distance": 10,"topspeed": 100},"turn":{"angle": 45},"emergencyStop":{"stop":false}}*/
-void processLinellaMessageReceived(aJsonObject *msg)
+void processLintillaMessageReceived(aJsonObject *msg)
 {
   bool emergencyStopValue = false;
   int topspeed = 0;
@@ -59,7 +59,7 @@ void processLinellaMessageReceived(aJsonObject *msg)
   aJsonObject *emergencyStop = aJson.getObjectItem(msg, "emergencyStop");
   if (!straight || !turn || !emergencyStop)
   {
-    Serial.println("no linella data");
+    Serial.println("no lintella data");
     return;
   }
 
@@ -162,7 +162,7 @@ void loop()
   if (serial_stream.available()) {
     /* Something real on input, let's take a look. */
     aJsonObject *msg = aJson.parse(&serial_stream);
-    processLinellaMessageReceived(msg);
+    processLintillaMessageReceived(msg);
     aJson.deleteItem(msg);
   }
 }
